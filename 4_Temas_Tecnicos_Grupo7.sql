@@ -33,7 +33,7 @@ FROM jugador
 --Procedimiento para insertar un club nuevo
 CREATE PROCEDURE insertar_club
 @nombre varchar,
-@año_fund int,
+@aÃ±o_fund int,
 @direccion varchar,
 @cod_liga int,
 @dni_resp int
@@ -41,7 +41,7 @@ AS
 BEGIN
 	IF NOT EXISTS(SELECT * FROM club c WHERE c.nombre = @nombre)
 	BEGIN
-		INSERT INTO club VALUES(@nombre,@año_fund,@direccion,@cod_liga,@dni_resp)
+		INSERT INTO club VALUES(@nombre,@aÃ±o_fund,@direccion,@cod_liga,@dni_resp)
 		PRINT  ('El Club fue insertado satisfactoriamente')
 	END
 	ELSE
@@ -115,7 +115,7 @@ SET @Error = @@ERROR
   IF  (@Error <>0)
 	BEGIN
 		ROLLBACK TRANSACTION
-		PRINT 'Error en la transacción'
+		PRINT 'Error en la transacciÃ³n'
 	END
 	ELSE
 	COMMIT
@@ -139,19 +139,19 @@ CREATE TRIGGER AU_CambiosJugador
 ON jugador
  AFTER UPDATE 
  AS 
- -- ¿Ha cambiado el dato?
+ -- Â¿Ha cambiado el dato?
  IF UPDATE(valor_actual)
  begin
 	--Actualizamos el campo fecha a la fecha/hora actual
 	UPDATE jugador SET fecha=GetDate() WHERE nro_jugador =(SELECT nro_jugador FROM inserted);
  
-    -- A modo de auditoría, añadimos un registro en la tabla expStatusHistory
+    -- A modo de auditorÃ­a, aÃ±adimos un registro en la tabla expStatusHistory
 	INSERT INTO Reg_cambios_valor_jugador(nro_jugador, valor_anterior) 
 	(SELECT nro_jugaor, valor_actual
 	FROM deleted 
 	WHERE nro_jugador = deleted.nro_jugador);
  END;	
--- La tabla deleted contiene información sobre los valores ANTIGUOS mientras que la tabla inserted contiene los NUEVOS valores.
+-- La tabla deleted contiene informaciÃ³n sobre los valores ANTIGUOS mientras que la tabla inserted contiene los NUEVOS valores.
 -- Ambas tablas son virtuales y tienen la misma estructura que la tabla a la que se asocia el Trigger. 
 
  -- Se obtiene los datos de la tabla Reg_cambios_valor_jugador
@@ -238,3 +238,26 @@ BEGIN
 		WHERE nro_club = @viejo_club AND nro_jugador = @nuevo_jugador
 		
 END
+-------------------------------------------------------------------------------------------------
+--SE CREO UNA TABLA HISTORIAL CON LA FECHA Y HORA ACTUAL, LA DESCRIPCION Y EL USUARIO
+CREATE TABLE historial
+	(fecha datetime,
+	descripcion varchar(100),
+	usuario varchar(20))
+
+---TRIGGER - 
+CREATE TRIGGER TR_inf_transf_Isertado
+ON inf_transf_detalle FOR insert
+AS
+INSERT INTO historial VALUES (GETDATE(),'Registro Insertado',CURRENT_USER)
+
+
+--set nocount on
+
+--INSERTO DATOS
+INSERT INTO club_jugador(nro_club,nro_jugador) VALUES(24,20)
+INSERT INTO inf_transf_detalle(nro_informe,nro_club,nro_jugador,valor_transf) VALUES(2,24,20,5641250)
+
+-- UNA VES INSERTADO LOS DATOS, CONSULTO LA TABLA HISTORIAL
+SELECT * FROM inf_transf_detalle
+SELECT * FROM historial
